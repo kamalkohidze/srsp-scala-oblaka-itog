@@ -55,13 +55,16 @@ object Main {
       concat(
         todoRoutes.routes,
         pathEndOrSingleSlash {
-          getFromFile("src/main/webapp/index.html")
+          getFromResource("webapp/index.html")
         },
-        getFromDirectory("src/main/webapp")
+        getFromResourceDirectory("webapp")
+
       )
     }
 
-    val bindingFuture = Http().newServerAt("0.0.0.0", 8080).bind(routes)
+    val port = sys.env.getOrElse("PORT", "8080").toInt
+    val bindingFuture = Http().newServerAt("0.0.0.0", port).bind(routes)
+
 
     bindingFuture.onComplete {
       case Success(binding) =>
