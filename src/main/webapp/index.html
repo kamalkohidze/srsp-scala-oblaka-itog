@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой To-Do List на Scala</title>
+    <style>
+        /* Все стили остаются такими же, добавлю только бейдж */
+        /* ... копируй все стили из предыдущего файла ... */
+
+        .tech-badge {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .tech-badge span {
+            display: inline-block;
+            padding: 5px 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            margin: 0 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<!-- HTML разметка остаётся такой же, добавь только после subtitle: -->
+<div class="tech-badge">
+    <span>⚙️ Scala Backend</span>
+    <span>🗄️ PostgreSQL</span>
+    <span>☁️ Supabase</span>
+</div>
+
+<script>
+    // ВАЖНО: Теперь работаем через Scala API!
+    const API_URL = 'http://localhost:8080/api';
+
+    let currentFilter = 'all';
+    let editingTodoId = null;
+    let allTodos = [];
+
+    async function loadTodos() {
+        try {
+            document.getElementById('loading').style.display = 'block';
+            const response = await fetch(`${API_URL}/todos`);
+
+            if (!response.ok) throw new Error(`Ошибка: ${response.status}`);
+
+            allTodos = await response.json();
+            renderTodos();
+            updateStats();
+            document.getElementById('loading').style.display = 'none';
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            document.getElementById('loading').innerHTML = '❌ Не могу подключиться к Scala серверу!<br>Убедись, что сервер запущен на порту 8080';
+        }
+    }
+
+    async function quickAddTodo() {
+        const input = document.getElementById('quickAddInput');
+        const title = input.value.trim();
+
+        if (!title) return;
+
+        try {
+            const response = await fetch(`${API_URL}/todos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, priority: 'medium' })
+            });
+
+            if (!response.ok) throw new Error('Ошибка создания');
+
+            input.value = '';
+            await loadTodos();
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Ошибка при добавлении задачи!');
+        }
+    }
+
+    async function toggleTodo(id, completed) {
+        try {
+            const response = await fetch(`${API_URL}/todos/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ completed })
+            });
+
+            if (!response.ok) throw new Error('Ошибка обновления');
+            await loadTodos();
+        } catch (error) {
+            console.error('Ошибка:', error);
+        }
+    }
+
+    async function deleteTodo(id) {
+        if (!confirm('Удалить эту задачу?')) return;
+
+        try {
+            const response = await fetch(`${API_URL}/todos/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) throw new Error('Ошибка удаления');
+            await loadTodos();
+        } catch (error) {
+            console.error('Ошибка:', error);
+        }
+    }
+
+    async function saveEdit() {
+        const title = document.getElementById('editTitle').value.trim();
+        const description = document.getElementById('editDescription').value.trim();
+        const priority = document.getElementById('editPriority').value;
+
+        if (!title) return;
+
+        try {
+            const response = await fetch(`${API_URL}/todos/${editingTodoId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, description, priority })
+            });
+
+            if (!response.ok) throw new Error('Ошибка обновления');
+
+            closeModal();
+            await loadTodos();
+        } catch (error) {
+            console.error('Ошибка:', error);
+        }
+    }
+
+    // Остальные функции остаются такими же (renderTodos, filterTodos, openEditModal, closeModal, updateStats)
+    // ... копируй их из предыдущего файла ...
+</script>
+</body>
+</html>
